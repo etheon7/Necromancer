@@ -1,0 +1,252 @@
+public class Necromancer extends CombatScript {
+
+    private static NPC[] minions = null;
+    private static NPC[] reavers = null;
+    private static NPC skeletal = null;
+
+    public static boolean SKELETAL_SPAWNED;
+
+    @Override
+    public Object[] getKeys() {
+        return new Object[]{13153};
+    }
+
+    @Override
+    public int attack(NPC npc, Entity target) {
+        int attackStyle = Utils.getRandom(3);
+        int size = npc.getSize();
+        NPC necromancer = npc;
+        final NPCCombatDefinitions defs = npc.getCombatDefinitions();
+        for (int nextTarget = 0; nextTarget < necromancer.getPossibleTargets().size(); nextTarget++) {
+            if (necromancer.getPossibleTargets().get(nextTarget) != null) {
+                necromancer.setTarget(necromancer.getPossibleTargets().get(Utils.random(0, necromancer.getPossibleTargets().size())));
+            }
+        }
+        if (!SKELETAL_SPAWNED && necromancer.getHitpoints() < 10000) {
+            SKELETAL_SPAWNED = true;
+            WorldTasksManager.schedule(new WorldTask() {
+                int loop;
+
+                @Override
+                public void run() {
+                    if (loop == 0) {
+                        necromancer.setNextAnimation(new Animation(10516));
+                        necromancer.setNextGraphics(new Graphics(1960));
+
+                    } else if (loop == 2) {
+                        skeletal = new NPC(9177, new Location(necromancer.getX() + Utils.random(1, 3),
+                                necromancer.getY() + Utils.random(1, 3), necromancer.getPlane()), -1, true, true);
+                        addSkeletalHorror(target);
+                        stop();
+                    }
+                    loop++;
+                }
+            }, 0, 1);
+        }
+        switch (attackStyle) {
+            case 0:
+                necromancer.setNextAnimation(new Animation(811));
+                necromancer.setNextGraphics(new Graphics(1845));
+                for (Entity t : npc.getPossibleTargets()) {
+                    World.sendProjectile(necromancer, t, 1846, 43, 22, 51, 50, 16, 0);
+                     int damage = getRandomMaxHitNPC(npc, 450,
+                                    NPCCombatDefinitions.MAGE, t);
+                     
+                    delayHit(npc, 1, t, getMagicHit(npc, damage));
+                    if (damage > 0 && Utils.getRandom(7) == 0) {
+                        t.getPoison().makePoisoned(80);
+                    }
+                }
+                WorldTasksManager.schedule(new WorldTask() {
+                    int loop;
+
+                    @Override
+                    public void run() {
+                        for (Entity t : npc.getPossibleTargets()) {
+                            int burn = Utils.random(10);
+                            if (burn > 7) {
+                                startBurnEffect(t);
+                            }
+                            stop();
+                        }
+                    }
+                }, 0, 1);
+                break;
+
+            case 1:
+                if (minions != null) {
+                    for (int count = 0; count < minions.length; count++) {
+                        if (World.getNPCs().contains(minions[count])) {
+                            return 1;
+                        }
+                    }
+                }
+                WorldTasksManager.schedule(new WorldTask() {
+                    int loop;
+
+                    @Override
+                    public void run() {
+                        if (loop == 0) {
+                            necromancer.setNextAnimation(new Animation(10516));
+                            necromancer.setNextGraphics(new Graphics(1960));
+                        } else if (loop == 2) {
+                            minions = new NPC[]{
+                                new NPC(1471, new Location(necromancer.getX() + Utils.random(2, 4), necromancer.getY() + Utils.random(2, 3), necromancer.getPlane()), -1, true, true),
+                                new NPC(1471, new Location(necromancer.getX() + Utils.random(1, 3), necromancer.getY() + Utils.random(1, 3), necromancer.getPlane()), -1, true, true),
+                                new NPC(1471, new Location(necromancer.getX() + Utils.random(1, 4), necromancer.getY() + Utils.random(1, 4), necromancer.getPlane()), -1, true, true)};
+                            for (int count = 0; count < minions.length; count++) {
+                                minions[count].setNextGraphics(new Graphics(2788));
+                                minions[count].setForceAgressive(true);
+                                minions[count].setForceAgressiveDistance(50);
+                                if (minions[count].getPossibleTargets().size() > 1) {
+                                    minions[count].setTarget(minions[count].getPossibleTargets().get(Utils.random(0, minions[count].getPossibleTargets().size())));
+                                } else {
+                                    minions[count].setTarget(target);
+                                }
+
+                            }
+                            stop();
+                        }
+                        loop++;
+                    }
+                }, 0, 1);
+                break;
+
+            case 2:
+                for (Entity e : necromancer.getPossibleTargets()) {
+                    necromancer.setNextGraphics(new Graphics(2867));
+                    necromancer.setNextAnimation(new Animation(802));
+                    int damage = getRandomMaxHitNPC(npc, 400,
+                            NPCCombatDefinitions.RANGE, e);
+                    if (necromancer.withinDistance(e, 6)) {
+                        delayHit(npc, 1, e, getRangeHit(npc, damage));
+                    }
+                }
+                break;
+            case 3:
+                if (reavers != null) {
+                    for (int count = 0; count < reavers.length; count++) {
+                        if (World.getNPCs().contains(reavers[count])) {
+                            return 1;
+                        }
+                    }
+                }
+                WorldTasksManager.schedule(new WorldTask() {
+                    int loop;
+
+                    @Override
+                    public void run() {
+                        if (loop == 0) {
+                            necromancer.setNextAnimation(new Animation(10516));
+                            necromancer.setNextGraphics(new Graphics(1960));
+
+                        } else if (loop == 2) {
+                            reavers = new NPC[]{
+                                new NPC(13458, new Location(necromancer.getX() + Utils.random(2, 4), necromancer.getY() + Utils.random(2, 3), necromancer.getPlane()), -1, true, true),
+                                new NPC(13458, new Location(necromancer.getX() + Utils.random(1, 3), necromancer.getY() + Utils.random(1, 3), necromancer.getPlane()), -1, true, true)
+                            };
+                            for (int count = 0; count < reavers.length; count++) {
+                                reavers[count].setNextGraphics(new Graphics(2788));
+                                reavers[count].setForceAgressive(true);
+                                reavers[count].setForceAgressiveDistance(50);
+                                if (reavers[count].getPossibleTargets().size() > 1) {
+                                    reavers[count].setTarget(reavers[count].getPossibleTargets().get(Utils.random(0, reavers[count].getPossibleTargets().size())));
+                                } else {
+                                    reavers[count].setTarget(target);
+                                }
+
+                            }
+                            stop();
+                        }
+                        loop++;
+                    }
+                }, 0, 1);
+
+                break;
+        }
+
+        return defs.getAttackDelay();
+    }
+
+    private boolean burning;
+
+    public void startBurnEffect(Entity e) {
+        if (burning) {
+            return;
+        }
+        burning = true;
+        if (e instanceof Player) {
+            WorldTasksManager.schedule(new WorldTask() {
+                int loop;
+
+                @Override
+                public void run() {
+                    if (e.isDead()) {
+                        stop();
+                    }
+                    switch (loop) {
+                        case 0:
+                            ((Player) e).sendMessage("Your body starts to burn.");
+                            e.applyHit(new Hit(null, 50, HitLook.REGULAR_DAMAGE));
+                            e.setNextGraphics(new Graphics(1999));
+                            break;
+                        case 1:
+                        case 2:
+                            e.applyHit(new Hit(null, 75, HitLook.REGULAR_DAMAGE));
+                            e.setNextGraphics(new Graphics(1999));
+                            break;
+                        case 4:
+                            int deepBurnChance = Utils.random(10);
+                            if (deepBurnChance > 7) {
+                                e.setNextGraphics(new Graphics(1999));
+                                e.applyHit(new Hit(null, 100, HitLook.REGULAR_DAMAGE));
+                            } else {
+                                burning = false;
+                                ((Player) e).sendMessage("Your body is no longer burning.");
+                                stop();
+                            }
+                            break;
+                        case 5:
+                            ((Player) e).sendMessage("Your body feels like it's on fire!");
+                            e.setNextGraphics(new Graphics(1999));
+                            e.applyHit(new Hit(null, Utils.random(70, 140), HitLook.REGULAR_DAMAGE));
+                            break;
+                        case 3:
+                        case 6:
+                        case 7:
+                        case 8:
+                            e.setNextGraphics(new Graphics(1999));
+                            e.applyHit(new Hit(null, Utils.random(50, 100), HitLook.REGULAR_DAMAGE));
+                            break;
+                        case 9:
+                            burning = false;
+                            ((Player) e).sendMessage("Your body is no longer burning.");
+                            stop();
+                            break;
+                    }
+
+                    loop++;
+                }
+            }, 0, 1);
+        }
+    }
+
+    public static void addSkeletalHorror(Entity e) {
+        if (e instanceof Player) {
+            ((Player) e).sendMessage("The Necromancer has called forth a truly evil being. Watch out!");
+            SKELETAL_SPAWNED = true;
+        }
+    }
+
+    public static NPC[] getMinions() {
+        return minions;
+    }
+
+    public static NPC[] getReavers() {
+        return reavers;
+    }
+
+    public static NPC getSkeletalHorror() {
+        return skeletal;
+    }
+}
